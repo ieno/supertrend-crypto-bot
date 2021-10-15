@@ -38,8 +38,11 @@ exchange = exchange_class({
 
 def log_write(msg, bot_start=bot_start, df=False, json=False, print_it=True):
     timestamp = datetime.fromtimestamp(time.time()).strftime('%d-%m-%Y %H:%M:%S.%f')
-    path = os.path.dirname(os.path.realpath(__file__))
-    log = open('{}/log/supertrend-{}.log'.format(path, bot_start), 'a')
+    path = os.path.dirname(os.path.realpath(__file__)) + '/log'
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+    log = open('{}/supertrend-{}.log'.format(path, bot_start), 'a')
 
     if not df and not json:
         entry = f'{timestamp}: {msg}\n'
@@ -171,11 +174,10 @@ def check_buy_sell_signals(df, ticker):
             quantity_buy_sell = (usd_stake / ask_price)
             cost = (quantity_buy_sell * ask_price)
             log_write(f'\n*** BUY {symbol} @ {df.timestamp.iloc[-1]} ***\namount: {quantity_buy_sell:.4f}\tprice: {df.close.iloc[-1]}\tcost: {cost:.2f}')
-            #order = exchange.create_market_buy_order(symbol, quantity_buy_sell)
-            #log_write(order)
+            #if not backtest:
+            #    order = exchange.create_market_buy_order(symbol, quantity_buy_sell)
+            #    log_write(order)
             in_position = True
-
-            #log_write(df.tail(2), df=True)
 
     if df.in_uptrend.iloc[-2] and not df.in_uptrend.iloc[-1]:
         if in_position:
@@ -183,11 +185,10 @@ def check_buy_sell_signals(df, ticker):
             trade_profit = (received - cost)
             profit += trade_profit
             log_write(f'\n*** SELL {symbol} @ {df.timestamp.iloc[-1]} ***\namount: {quantity_buy_sell}\tprice: {df.close.iloc[-1]}\tprofit: {trade_profit:.2f}')
-            #order = exchange.create_market_sell_order(symbol, quantity_buy_sell)
-            #log_write(order)
+            #if not backtest:
+            #    order = exchange.create_market_sell_order(symbol, quantity_buy_sell)
+            #    log_write(order)
             in_position = False
-
-            #log_write(df.tail(2), df=True)
 
 
 def run_backtest(df, ticker):
@@ -237,7 +238,7 @@ def run_bot(backtest=False):
         else:
             log_write(f'Backtesting from {df.timestamp.iloc[0]} to {df.timestamp.iloc[-1]}')
             run_backtest(supertrend_data, ticker)
-            print(supertrend_data)
+            log_write(supertrend_data, df=True)
 
 
 def main():
